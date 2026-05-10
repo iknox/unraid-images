@@ -1,0 +1,5 @@
+.DS_Store
+.memsearch/
+__pycache__/
+*.pyc
+data/
