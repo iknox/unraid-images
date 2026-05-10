@@ -46,6 +46,9 @@ gen_if_unset GARAGE_METRICS_TOKEN
 # can copy them out of `docker logs garage` without having to docker exec
 # into the running container. Subsequent restarts reload from the
 # persisted file and skip this block, so logs don't keep leaking creds.
+#
+# If the log output scrolls past before the operator can read it, the
+# banner is still recoverable via `docker logs garage 2>&1 | grep -A6 'first-boot secrets'`.
 if [ -n "$_GENERATED_SECRETS" ]; then
     cat >&2 <<BANNER
 
@@ -63,6 +66,9 @@ if [ -n "$_GENERATED_SECRETS" ]; then
   They are persisted inside the metadata dir — this message will NOT reappear
   on subsequent restarts. If you lose the persisted file, new secrets will be
   generated and existing connections will fail until reconfigured.
+--------------------------------------------------------------------------------
+  Missed this banner? Recover it from the host any time:
+    docker logs garage 2>&1 | grep -A6 "first-boot secrets"
 ================================================================================
 
 BANNER
