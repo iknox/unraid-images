@@ -1,0 +1,19 @@
+metadata_dir = "${GARAGE_METADATA_DIR}"
+data_dir     = "${GARAGE_DATA_DIR}"
+db_engine    = "${GARAGE_DB_ENGINE}"
+
+replication_factor = ${GARAGE_REPLICATION_FACTOR}
+
+rpc_bind_addr   = "${GARAGE_RPC_BIND_ADDR}"
+rpc_public_addr = "${GARAGE_RPC_PUBLIC_ADDR}"
+rpc_secret      = "${GARAGE_RPC_SECRET}"
+
+[s3_api]
+api_bind_addr = "${GARAGE_S3_API_BIND_ADDR}"
+s3_region     = "${GARAGE_S3_REGION}"
+root_domain   = "${GARAGE_S3_ROOT_DOMAIN}"
+
+[admin]
+api_bind_addr = "${GARAGE_ADMIN_BIND_ADDR}"
+admin_token   = "${GARAGE_ADMIN_TOKEN}"
+metrics_token = "${GARAGE_METRICS_TOKEN}"
