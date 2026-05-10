@@ -39,6 +39,29 @@ gen_if_unset GARAGE_RPC_SECRET
 gen_if_unset GARAGE_ADMIN_TOKEN
 gen_if_unset GARAGE_METRICS_TOKEN
 
+# Also write each secret to its own single-value file so operators can use
+# 'docker exec garage /garage --rpc-secret-file /etc/garage.rpc-secret ...'.
+# docker exec inherits the CONTAINER'S env list (Config.Env) — which may
+# contain empty GARAGE_RPC_SECRET= set by the template form. That empty
+# value overrides the config file read, so we need a file-based path for
+# CLI subcommands to work after the container is running.
+umask 077
+printf '%s' "$GARAGE_RPC_SECRET"     > /etc/garage.rpc-secret
+printf '%s' "$GARAGE_ADMIN_TOKEN"    > /etc/garage.admin-token
+printf '%s' "$GARAGE_METRICS_TOKEN"  > /etc/garage.metrics-token
+chmod 600 /etc/garage.rpc-secret /etc/garage.admin-token /etc/garage.metrics-token
+
+# Convenience wrapper so operators can just run 'docker exec garage garage
+# bucket create foo' without knowing about --rpc-secret-file. It also
+# unsets the empty-string GARAGE_* env vars that docker exec would
+# otherwise pass through, which would collide with our file-based args.
+cat > /usr/local/bin/garage <<'WRAPPER'
+#!/bin/sh
+unset GARAGE_RPC_SECRET GARAGE_ADMIN_TOKEN GARAGE_METRICS_TOKEN
+exec /garage --rpc-secret-file /etc/garage.rpc-secret "$@"
+WRAPPER
+chmod +x /usr/local/bin/garage
+
 export GARAGE_METADATA_DIR GARAGE_DATA_DIR GARAGE_DB_ENGINE \
        GARAGE_REPLICATION_FACTOR GARAGE_RPC_BIND_ADDR GARAGE_RPC_PUBLIC_ADDR \
        GARAGE_RPC_SECRET GARAGE_S3_API_BIND_ADDR GARAGE_S3_REGION \
