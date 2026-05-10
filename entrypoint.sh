@@ -26,6 +26,7 @@ if [ -f "$SECRETS_FILE" ]; then
     . "$SECRETS_FILE"
 fi
 
+_GENERATED_SECRETS=""
 gen_if_unset() {
     eval "val=\${$1:-}"
     if [ -z "$val" ]; then
@@ -33,11 +34,39 @@ gen_if_unset() {
         eval "$1='$new'"
         echo "[entrypoint] generated $1"
         echo "$1='$new'" >> "$SECRETS_FILE"
+        _GENERATED_SECRETS="$_GENERATED_SECRETS $1"
     fi
 }
 gen_if_unset GARAGE_RPC_SECRET
 gen_if_unset GARAGE_ADMIN_TOKEN
 gen_if_unset GARAGE_METRICS_TOKEN
+
+# On first boot (and only on first boot — we check which vars we just
+# generated, not persisted ones), print the secrets to stderr so operators
+# can copy them out of `docker logs garage` without having to docker exec
+# into the running container. Subsequent restarts reload from the
+# persisted file and skip this block, so logs don't keep leaking creds.
+if [ -n "$_GENERATED_SECRETS" ]; then
+    cat >&2 <<BANNER
+
+================================================================================
+  Garage first-boot secrets (shown ONCE; persisted to .garage-env-secrets)
+--------------------------------------------------------------------------------
+  GARAGE_RPC_SECRET     = $GARAGE_RPC_SECRET
+  GARAGE_ADMIN_TOKEN    = $GARAGE_ADMIN_TOKEN
+  GARAGE_METRICS_TOKEN  = $GARAGE_METRICS_TOKEN
+--------------------------------------------------------------------------------
+  These values are used for:
+    RPC_SECRET     - cluster RPC auth (needed for \`garage\` CLI on other nodes)
+    ADMIN_TOKEN    - admin API auth (if you expose admin.api_bind_addr)
+    METRICS_TOKEN  - Prometheus /metrics auth
+  They are persisted inside the metadata dir — this message will NOT reappear
+  on subsequent restarts. If you lose the persisted file, new secrets will be
+  generated and existing connections will fail until reconfigured.
+================================================================================
+
+BANNER
+fi
 
 # Also write each secret to its own single-value file so operators can use
 # 'docker exec garage /garage --rpc-secret-file /etc/garage.rpc-secret ...'.
