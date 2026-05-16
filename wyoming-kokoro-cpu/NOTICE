@@ -1,0 +1,12 @@
+This image bundles wyoming_kokoro.py, a Python runtime for running Kokoro TTS
+behind the Wyoming protocol, authored by Luca Chiabrera and distributed under
+the MIT License (see LICENSE). Source:
+
+    https://github.com/chiabre/wyoming-kokoro
+
+Model files (Kokoro-ONNX) are not bundled; they are downloaded on first
+container start from:
+
+    https://github.com/thewh1teagle/kokoro-onnx
+
+Kokoro-ONNX is distributed under the Apache-2.0 License.
