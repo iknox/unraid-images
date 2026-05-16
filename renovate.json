@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    ":separateMajorReleases"
+  ],
+  "schedule": ["before 6am on monday"],
+  "timezone": "America/Los_Angeles",
+  "labels": ["dependencies"],
+  "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "description": "Group all base-image bumps in a single PR per week.",
+      "matchManagers": ["dockerfile"],
+      "groupName": "docker base images"
+    },
+    {
+      "description": "Auto-merge patch updates for upstream Garage; we'll still see the PR for visibility, but it merges itself if CI is green.",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["dxflrs/garage"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "NEVER auto-merge majors. Wizard sleeps when major upgrades break things.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major-upgrade-review"]
+    },
+    {
+      "description": "Group GitHub Actions workflow updates separately so they don't pollute image-bump PRs.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": false
+  }
+}
