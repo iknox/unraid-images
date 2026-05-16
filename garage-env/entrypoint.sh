@@ -1,0 +1,156 @@
+#!/bin/sh
+# Materialise /etc/garage.toml from env vars, auto-generating secrets where
+# not provided. Then hand off to the upstream garage binary.
+
+set -eu
+
+# --- Sensible defaults for every non-secret key ---------------------------
+: "${GARAGE_METADATA_DIR:=/var/lib/garage/meta}"
+: "${GARAGE_DATA_DIR:=/var/lib/garage/data}"
+: "${GARAGE_DB_ENGINE:=sqlite}"
+: "${GARAGE_REPLICATION_FACTOR:=1}"
+: "${GARAGE_RPC_BIND_ADDR:=[::]:3901}"
+: "${GARAGE_RPC_PUBLIC_ADDR:=127.0.0.1:3901}"
+: "${GARAGE_S3_API_BIND_ADDR:=[::]:3900}"
+: "${GARAGE_S3_REGION:=garage}"
+: "${GARAGE_S3_ROOT_DOMAIN:=.s3.garage.local}"
+: "${GARAGE_ADMIN_BIND_ADDR:=[::]:3903}"
+
+# --- Auto-generate secrets on first boot; persist in metadata dir ---------
+# We stash them alongside metadata so they survive container recreation.
+mkdir -p "$GARAGE_METADATA_DIR"
+SECRETS_FILE="$GARAGE_METADATA_DIR/.garage-env-secrets"
+
+if [ -f "$SECRETS_FILE" ]; then
+    # shellcheck disable=SC1090
+    . "$SECRETS_FILE"
+fi
+
+_GENERATED_SECRETS=""
+gen_if_unset() {
+    eval "val=\${$1:-}"
+    if [ -z "$val" ]; then
+        new=$(tr -dc 'a-f0-9' </dev/urandom | head -c 64)
+        eval "$1='$new'"
+        echo "[entrypoint] generated $1"
+        echo "$1='$new'" >> "$SECRETS_FILE"
+        _GENERATED_SECRETS="$_GENERATED_SECRETS $1"
+    fi
+}
+gen_if_unset GARAGE_RPC_SECRET
+gen_if_unset GARAGE_ADMIN_TOKEN
+gen_if_unset GARAGE_METRICS_TOKEN
+
+# On first boot (and only on first boot — we check which vars we just
+# generated, not persisted ones), print the secrets to stderr so operators
+# can copy them out of `docker logs garage` without having to docker exec
+# into the running container. Subsequent restarts reload from the
+# persisted file and skip this block, so logs don't keep leaking creds.
+#
+# If the log output scrolls past before the operator can read it, the
+# banner is still recoverable via `docker logs garage 2>&1 | grep -A6 'first-boot secrets'`.
+if [ -n "$_GENERATED_SECRETS" ]; then
+    cat >&2 <<BANNER
+
+================================================================================
+  Garage first-boot secrets (shown ONCE; persisted to .garage-env-secrets)
+--------------------------------------------------------------------------------
+  GARAGE_RPC_SECRET     = $GARAGE_RPC_SECRET
+  GARAGE_ADMIN_TOKEN    = $GARAGE_ADMIN_TOKEN
+  GARAGE_METRICS_TOKEN  = $GARAGE_METRICS_TOKEN
+--------------------------------------------------------------------------------
+  These values are used for:
+    RPC_SECRET     - cluster RPC auth (needed for \`garage\` CLI on other nodes)
+    ADMIN_TOKEN    - admin API auth (if you expose admin.api_bind_addr)
+    METRICS_TOKEN  - Prometheus /metrics auth
+  They are persisted inside the metadata dir — this message will NOT reappear
+  on subsequent restarts. If you lose the persisted file, new secrets will be
+  generated and existing connections will fail until reconfigured.
+--------------------------------------------------------------------------------
+  Missed this banner? Recover it from the host any time:
+    docker logs garage 2>&1 | grep -A6 "first-boot secrets"
+================================================================================
+
+BANNER
+fi
+
+# Also write each secret to its own single-value file so operators can use
+# 'docker exec garage /garage --rpc-secret-file /etc/garage.rpc-secret ...'.
+# docker exec inherits the CONTAINER'S env list (Config.Env) — which may
+# contain empty GARAGE_RPC_SECRET= set by the template form. That empty
+# value overrides the config file read, so we need a file-based path for
+# CLI subcommands to work after the container is running.
+umask 077
+printf '%s' "$GARAGE_RPC_SECRET"     > /etc/garage.rpc-secret
+printf '%s' "$GARAGE_ADMIN_TOKEN"    > /etc/garage.admin-token
+printf '%s' "$GARAGE_METRICS_TOKEN"  > /etc/garage.metrics-token
+chmod 600 /etc/garage.rpc-secret /etc/garage.admin-token /etc/garage.metrics-token
+
+# Convenience wrapper so operators can just run 'docker exec garage garage
+# bucket create foo' without knowing about --rpc-secret-file. It also
+# unsets the empty-string GARAGE_* env vars that docker exec would
+# otherwise pass through, which would collide with our file-based args.
+cat > /usr/local/bin/garage <<'WRAPPER'
+#!/bin/sh
+unset GARAGE_RPC_SECRET GARAGE_ADMIN_TOKEN GARAGE_METRICS_TOKEN
+exec /garage --rpc-secret-file /etc/garage.rpc-secret "$@"
+WRAPPER
+chmod +x /usr/local/bin/garage
+
+export GARAGE_METADATA_DIR GARAGE_DATA_DIR GARAGE_DB_ENGINE \
+       GARAGE_REPLICATION_FACTOR GARAGE_RPC_BIND_ADDR GARAGE_RPC_PUBLIC_ADDR \
+       GARAGE_RPC_SECRET GARAGE_S3_API_BIND_ADDR GARAGE_S3_REGION \
+       GARAGE_S3_ROOT_DOMAIN GARAGE_ADMIN_BIND_ADDR GARAGE_ADMIN_TOKEN \
+       GARAGE_METRICS_TOKEN
+
+# Render template. envsubst is installed in the image via gettext.
+envsubst < /garage.toml.tmpl > /etc/garage.toml
+
+# Garage refuses to load secrets from a world-readable config file, and
+# `docker exec /garage` can't see the entrypoint's runtime env — without
+# this, CLI subcommands inside the container fail with "wrong length"
+# because they can neither read the secret from config nor env.
+chmod 600 /etc/garage.toml
+
+echo "[entrypoint] wrote /etc/garage.toml (mode 600)"
+
+# --- Auto-bootstrap single-node layout on first boot ----------------------
+# Garage v2 requires an explicit cluster layout before any bucket ops.
+# Detect first-run by the presence of a marker file in metadata dir;
+# after that, the layout is persisted in Garage's metadata so re-running
+# is harmless but unnecessary.
+LAYOUT_MARKER="$GARAGE_METADATA_DIR/.garage-env-layout-applied"
+
+# Fork a background helper that waits for garage to come up, then assigns
+# + applies the layout once. It exits cleanly whether successful or if the
+# marker already exists.
+(
+    if [ -f "$LAYOUT_MARKER" ]; then
+        exit 0
+    fi
+    # Wait up to 30s for garage RPC to be reachable.
+    for i in $(seq 1 30); do
+        if /garage status >/dev/null 2>&1; then
+            break
+        fi
+        sleep 1
+    done
+    if ! /garage status >/dev/null 2>&1; then
+        echo "[entrypoint] garage didn't become ready — skipping layout auto-assign" >&2
+        exit 0
+    fi
+    # If a layout already exists (e.g. container recreated with same volume),
+    # skip. Otherwise stage + apply version 1.
+    if /garage layout show 2>/dev/null | grep -q "No nodes currently have a role"; then
+        NODE_ID=$(/garage node id -q 2>/dev/null | cut -d'@' -f1)
+        if [ -n "$NODE_ID" ]; then
+            echo "[entrypoint] auto-assigning single-node layout to $NODE_ID"
+            /garage layout assign -z dc1 -c 1G "$NODE_ID" >/dev/null 2>&1 || true
+            /garage layout apply --version 1 >/dev/null 2>&1 || true
+        fi
+    fi
+    touch "$LAYOUT_MARKER"
+) &
+
+# --- Hand off to garage ---------------------------------------------------
+exec /garage "$@"
