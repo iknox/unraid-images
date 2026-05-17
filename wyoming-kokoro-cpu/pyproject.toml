@@ -2,11 +2,11 @@
 name = "wyoming-kokoro-cpu"
 version = "0.1.0"
 description = "CPU-only Wyoming-protocol wrapper around Kokoro-ONNX TTS."
-requires-python = ">=3.11,<3.14"
+requires-python = "==3.13.13"
 dependencies = [
-    "kokoro-onnx>=0.5.0",
+    "kokoro-onnx==0.5.0",
     "wyoming==1.9.0",
-    "numpy>=2.4.4",
+    "numpy==2.4.5",
 ]
 
 [tool.uv]
