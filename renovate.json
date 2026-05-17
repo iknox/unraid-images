@@ -33,6 +33,12 @@
       "description": "Group GitHub Actions workflow updates separately so they don't pollute image-bump PRs.",
       "matchManagers": ["github-actions"],
       "groupName": "github actions"
+    },
+    {
+      "description": "Pin python base image to 3.12. kokoro-onnx 0.5.0 requires <3.14, and Renovate's 'docker base images' bump to 3.14 broke the build. Allow patch updates within 3.12.x only.",
+      "matchPackageNames": ["python"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
     }
   ],
   "vulnerabilityAlerts": {
