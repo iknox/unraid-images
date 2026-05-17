@@ -10,6 +10,10 @@
   "timezone": "America/Los_Angeles",
   "labels": ["dependencies"],
   "rangeStrategy": "pin",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
   "packageRules": [
     {
       "description": "Group all base-image bumps in a single PR per week.",
