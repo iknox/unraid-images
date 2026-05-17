@@ -1,7 +1,7 @@
 # CPU-only Wyoming Kokoro TTS image.
 # Wraps chiabre/wyoming-kokoro (1.0.0) in a reproducible container.
 
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 # espeak-ng is Kokoro's phonemizer. wget for first-run model download.
 RUN apt-get update \
