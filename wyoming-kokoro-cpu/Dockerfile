@@ -14,7 +14,7 @@ RUN apt-get update \
  && apt-get install --no-install-recommends -y espeak-ng wget ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/astral-sh/uv:0.11.14 /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.11.16 /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
