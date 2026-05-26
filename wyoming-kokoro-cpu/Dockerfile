@@ -21,11 +21,11 @@ WORKDIR /app
 # Install Python deps from the lockfile first so they cache across code changes.
 # --frozen: refuse to update the lock; CI must commit lock updates explicitly.
 # --no-dev: skip dev-only deps (we have none, but kept for hygiene).
-# UV_PROJECT_ENVIRONMENT points at /usr so packages land system-site rather
-# than in a .venv we'd then have to activate at runtime.
-ENV UV_PROJECT_ENVIRONMENT=/usr/local
+# Packages land in a dedicated venv added to PATH — no activation needed at runtime.
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv venv /opt/venv && uv sync --frozen --no-dev --no-install-project
 
 # Vendored chiabre runtime — single python file, kept in-repo so upstream
 # changes don't silently shift under us and builds stay reproducible offline.
