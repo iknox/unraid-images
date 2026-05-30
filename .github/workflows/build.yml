@@ -7,6 +7,7 @@ on:
     paths:
       - 'garage-env/**'
       - 'wyoming-kokoro-cpu/**'
+      - 'mcp-searxng/**'
       - '.github/workflows/build.yml'
   workflow_dispatch:
     inputs:
@@ -19,6 +20,7 @@ on:
           - all
           - garage-env
           - wyoming-kokoro-cpu
+          - mcp-searxng
 
 permissions:
   contents: read
@@ -33,6 +35,7 @@ jobs:
     outputs:
       garage-env: ${{ steps.filter.outputs.garage-env }}
       wyoming-kokoro-cpu: ${{ steps.filter.outputs.wyoming-kokoro-cpu }}
+      mcp-searxng: ${{ steps.filter.outputs.mcp-searxng }}
     steps:
       - uses: actions/checkout@v6
       - id: filter
@@ -43,6 +46,8 @@ jobs:
               - 'garage-env/**'
             wyoming-kokoro-cpu:
               - 'wyoming-kokoro-cpu/**'
+            mcp-searxng:
+              - 'mcp-searxng/**'
 
   build-push:
     needs: changes
@@ -55,6 +60,8 @@ jobs:
             platforms: linux/amd64,linux/arm64
           - name: wyoming-kokoro-cpu
             platforms: linux/amd64
+          - name: mcp-searxng
+            platforms: linux/amd64,linux/arm64
     steps:
       - name: Decide whether this matrix entry runs
         id: gate
@@ -76,6 +83,7 @@ jobs:
             case "${{ matrix.image.name }}" in
               garage-env)         flag="${{ needs.changes.outputs.garage-env }}" ;;
               wyoming-kokoro-cpu) flag="${{ needs.changes.outputs.wyoming-kokoro-cpu }}" ;;
+              mcp-searxng)        flag="${{ needs.changes.outputs.mcp-searxng }}" ;;
             esac
             if [ "$flag" = "true" ]; then
               echo "run=true" >> $GITHUB_OUTPUT
