@@ -8,6 +8,7 @@ on:
       - 'garage-env/**'
       - 'wyoming-kokoro-cpu/**'
       - 'mcp-searxng/**'
+      - 'engramhalo-flash-next/**'
       - '.github/workflows/build.yml'
   workflow_dispatch:
     inputs:
@@ -21,6 +22,7 @@ on:
           - garage-env
           - wyoming-kokoro-cpu
           - mcp-searxng
+          - engramhalo-flash-next
 
 permissions:
   contents: read
@@ -36,6 +38,7 @@ jobs:
       garage-env: ${{ steps.filter.outputs.garage-env }}
       wyoming-kokoro-cpu: ${{ steps.filter.outputs.wyoming-kokoro-cpu }}
       mcp-searxng: ${{ steps.filter.outputs.mcp-searxng }}
+      engramhalo-flash-next: ${{ steps.filter.outputs.engramhalo-flash-next }}
     steps:
       - uses: actions/checkout@v6
       - id: filter
@@ -48,6 +51,8 @@ jobs:
               - 'wyoming-kokoro-cpu/**'
             mcp-searxng:
               - 'mcp-searxng/**'
+            engramhalo-flash-next:
+              - 'engramhalo-flash-next/**'
 
   build-push:
     needs: changes
@@ -62,6 +67,8 @@ jobs:
             platforms: linux/amd64
           - name: mcp-searxng
             platforms: linux/amd64,linux/arm64
+          - name: engramhalo-flash-next
+            platforms: linux/amd64
     steps:
       - name: Decide whether this matrix entry runs
         id: gate
@@ -81,9 +88,10 @@ jobs:
           else
             changed='${{ toJSON(needs.changes.outputs) }}'
             case "${{ matrix.image.name }}" in
-              garage-env)         flag="${{ needs.changes.outputs.garage-env }}" ;;
-              wyoming-kokoro-cpu) flag="${{ needs.changes.outputs.wyoming-kokoro-cpu }}" ;;
-              mcp-searxng)        flag="${{ needs.changes.outputs.mcp-searxng }}" ;;
+              garage-env)              flag="${{ needs.changes.outputs.garage-env }}" ;;
+              wyoming-kokoro-cpu)      flag="${{ needs.changes.outputs.wyoming-kokoro-cpu }}" ;;
+              mcp-searxng)             flag="${{ needs.changes.outputs.mcp-searxng }}" ;;
+              engramhalo-flash-next)   flag="${{ needs.changes.outputs.engramhalo-flash-next }}" ;;
             esac
             if [ "$flag" = "true" ]; then
               echo "run=true" >> $GITHUB_OUTPUT
