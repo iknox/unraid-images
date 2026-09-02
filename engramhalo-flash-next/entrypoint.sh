@@ -12,6 +12,10 @@ CTX="${CTX:-163840}"
 NP="${NP:-1}"
 THREADS="${THREADS:-4}"
 MODE="${MODE:-ssd}"   # ssd = engram table lazy-read from SSD (~1 GiB resident); ram = -lm none (fastest, <=131k ctx)
+CHAT_KWARGS="${CHAT_KWARGS:-$(cat <<'KWARGS'
+{"reasoning_effort":"low"}
+KWARGS
+)}"        # model default is xhigh, which overthinks for agent coding; pass {} to restore
 EXTRA_ARGS="${EXTRA_ARGS:-}"
 
 # hipBLASLt path is part of the measured configuration
@@ -34,6 +38,10 @@ if [ -n "$MTP" ] && [ -f "$MTP" ]; then
   # MTP sidecar is validated up to a 164K slot on this branch
   set -- "$@" -md "$MTP" --spec-type draft-mtp,ngram-mod \
     --spec-draft-n-max 4 --spec-draft-p-min 0.75
+fi
+
+if [ -n "$CHAT_KWARGS" ]; then
+  set -- "$@" --chat-template-kwargs "$CHAT_KWARGS"
 fi
 
 exec llama-server "$@" $EXTRA_ARGS
