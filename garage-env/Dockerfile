@@ -6,7 +6,7 @@
 
 FROM dxflrs/garage:v2.3.0 AS upstream
 
-FROM alpine:3.23
+FROM alpine:3.24
 RUN apk add --no-cache gettext ca-certificates tzdata \
  && rm -rf /var/cache/apk/*
 
