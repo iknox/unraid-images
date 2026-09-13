@@ -10,7 +10,7 @@
 # Unraid container needs no config mounts or env vars — only /models.
 
 # ---- build stage -----------------------------------------------------------
-FROM registry.fedoraproject.org/fedora:44 AS builder
+FROM registry.fedoraproject.org/fedora:46 AS builder
 
 RUN <<'EOF'
 tee /etc/yum.repos.d/rocm.repo <<REPO
@@ -75,7 +75,7 @@ RUN mkdir -p /usr/local/lib64 \
   && ldconfig
 
 # ---- runtime stage ---------------------------------------------------------
-FROM registry.fedoraproject.org/fedora-minimal:44
+FROM registry.fedoraproject.org/fedora-minimal:46
 
 RUN <<'EOF'
 tee /etc/yum.repos.d/rocm.repo <<REPO
