@@ -75,7 +75,7 @@ RUN mkdir -p /usr/local/lib64 \
   && ldconfig
 
 # ---- runtime stage ---------------------------------------------------------
-FROM registry.fedoraproject.org/fedora-minimal:44
+FROM registry.fedoraproject.org/fedora-minimal:46
 
 RUN <<'EOF'
 tee /etc/yum.repos.d/rocm.repo <<REPO
