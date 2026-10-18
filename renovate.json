@@ -21,16 +21,12 @@
       "groupName": "docker base images"
     },
     {
-      "description": "Auto-merge patch updates for upstream Garage; we'll still see the PR for visibility, but it merges itself if CI is green.",
-      "matchManagers": ["dockerfile"],
-      "matchPackageNames": ["dxflrs/garage"],
-      "matchUpdateTypes": ["patch"],
+      "description": "Auto-merge every update. Homelab policy: a bad bump is a revert, and the running container still needs a manual Apply, so nothing changes silently.",
       "automerge": true
     },
     {
-      "description": "NEVER auto-merge majors. Wizard sleeps when major upgrades break things.",
+      "description": "Keep majors visible in the dependency dashboard even though they merge themselves.",
       "matchUpdateTypes": ["major"],
-      "automerge": false,
       "labels": ["dependencies", "major-upgrade-review"]
     },
     {
@@ -47,6 +43,6 @@
   ],
   "vulnerabilityAlerts": {
     "labels": ["security"],
-    "automerge": false
+    "automerge": true
   }
 }
