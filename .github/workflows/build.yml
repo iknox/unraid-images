@@ -6,9 +6,7 @@ on:
     tags: ['v*']
     paths:
       - 'garage-env/**'
-      - 'wyoming-kokoro-cpu/**'
       - 'mcp-searxng/**'
-      - 'engramhalo-flash-next/**'
       - '.github/workflows/build.yml'
   workflow_dispatch:
     inputs:
@@ -20,9 +18,7 @@ on:
         options:
           - all
           - garage-env
-          - wyoming-kokoro-cpu
           - mcp-searxng
-          - engramhalo-flash-next
 
 permissions:
   contents: read
@@ -36,9 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       garage-env: ${{ steps.filter.outputs.garage-env }}
-      wyoming-kokoro-cpu: ${{ steps.filter.outputs.wyoming-kokoro-cpu }}
       mcp-searxng: ${{ steps.filter.outputs.mcp-searxng }}
-      engramhalo-flash-next: ${{ steps.filter.outputs.engramhalo-flash-next }}
     steps:
       - uses: actions/checkout@v6
       - id: filter
@@ -47,12 +41,8 @@ jobs:
           filters: |
             garage-env:
               - 'garage-env/**'
-            wyoming-kokoro-cpu:
-              - 'wyoming-kokoro-cpu/**'
             mcp-searxng:
               - 'mcp-searxng/**'
-            engramhalo-flash-next:
-              - 'engramhalo-flash-next/**'
 
   build-push:
     needs: changes
@@ -63,12 +53,8 @@ jobs:
         image:
           - name: garage-env
             platforms: linux/amd64,linux/arm64
-          - name: wyoming-kokoro-cpu
-            platforms: linux/amd64
           - name: mcp-searxng
             platforms: linux/amd64,linux/arm64
-          - name: engramhalo-flash-next
-            platforms: linux/amd64
     steps:
       - name: Decide whether this matrix entry runs
         id: gate
@@ -86,12 +72,9 @@ jobs:
             echo "run=true" >> $GITHUB_OUTPUT
           # branch push: only build images whose subdir changed
           else
-            changed='${{ toJSON(needs.changes.outputs) }}'
             case "${{ matrix.image.name }}" in
-              garage-env)              flag="${{ needs.changes.outputs.garage-env }}" ;;
-              wyoming-kokoro-cpu)      flag="${{ needs.changes.outputs.wyoming-kokoro-cpu }}" ;;
-              mcp-searxng)             flag="${{ needs.changes.outputs.mcp-searxng }}" ;;
-              engramhalo-flash-next)   flag="${{ needs.changes.outputs.engramhalo-flash-next }}" ;;
+              garage-env)   flag="${{ needs.changes.outputs.garage-env }}" ;;
+              mcp-searxng)  flag="${{ needs.changes.outputs.mcp-searxng }}" ;;
             esac
             if [ "$flag" = "true" ]; then
               echo "run=true" >> $GITHUB_OUTPUT

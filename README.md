@@ -4,7 +4,9 @@ Wrapper Docker images that back the templates in [unraid-templates](https://gith
 
 | Subdirectory          | Image                                       | Purpose                                          |
 |-----------------------|---------------------------------------------|--------------------------------------------------|
-| `garage-env/`         | `ghcr.io/iknox/garage-env`                  | Env-var-configured wrapper around Garage v2.3.0  |
-| `wyoming-kokoro-cpu/` | `ghcr.io/iknox/wyoming-kokoro-cpu`          | CPU-only Kokoro TTS over the Wyoming protocol    |
+| `garage-env/`         | `ghcr.io/iknox/garage-env`                  | Env-var-configured wrapper around Garage v2.4.1  |
+| `mcp-searxng/`        | `ghcr.io/iknox/mcp-searxng`                 | MCP server exposing SearXNG search to agents     |
 
 Each subdirectory has its own Dockerfile and README; CI builds and pushes each image to GHCR on changes to its respective subdir.
+
+The local LLM templates (`qwen38-flash-next-gufo`, `deepseek-v4-flash-vulkan`) use kyuz0's published images directly and are not built here.
