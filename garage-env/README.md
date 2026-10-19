@@ -4,6 +4,8 @@ Thin wrapper around [Garage](https://garagehq.deuxfleurs.fr/) that reads every c
 
 Upstream Garage requires a `garage.toml` and only supports env-var overrides for three secret values. This image renders a full `garage.toml` from env at startup and auto-generates the three secrets on first boot (persisted to `$GARAGE_METADATA_DIR/.garage-env-secrets` so they survive container recreation).
 
+The image also embeds the [khairul169/garage-webui](https://github.com/khairul169/garage-webui) admin UI (bucket/key/cluster management plus an object browser). It reads the materialised `garage.toml` in-container, so the admin token never leaves the container. On by default; disable with `GARAGE_WEBUI=0`.
+
 Built for the [iknox/unraid-templates](https://github.com/iknox/unraid-templates) stack, where users configure every container via the Unraid template form.
 
 ## Environment variables
@@ -25,6 +27,16 @@ All optional; defaults in parentheses. Point them at whatever suits your deploym
 | `GARAGE_ADMIN_BIND_ADDR` | `[::]:3903` | |
 | `GARAGE_ADMIN_TOKEN` | auto-generated | |
 | `GARAGE_METRICS_TOKEN` | auto-generated | |
+| `GARAGE_WEBUI` | `1` | Set to `0` to disable the embedded web UI |
+| `GARAGE_WEBUI_PORT` | `3909` | Web UI listen port |
+| `AUTH_USER_PASS` | *(unset)* | `user:$2y$10$<bcrypt>` to require web UI login |
+
+### Web UI security note
+
+Without `AUTH_USER_PASS` the web UI is unauthenticated, and its `/api/config`
+endpoint echoes the rendered toml — including the master admin, metrics and
+RPC secrets. Fine on a trusted LAN; **never expose port 3909 (or proxy it)
+without setting `AUTH_USER_PASS`**, and don't put it behind a public tunnel.
 
 ## Quick start
 

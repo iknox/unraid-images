@@ -114,6 +114,22 @@ chmod 600 /etc/garage.toml
 
 echo "[entrypoint] wrote /etc/garage.toml (mode 600)"
 
+# --- Embedded web UI (khairul169/garage-webui) ------------------------------
+# Reads /etc/garage.toml directly: the admin API endpoint, S3 endpoint and
+# admin token all come from the config rendered above — nothing to plumb.
+# Runs as a background child of the entrypoint; its logs interleave into
+# `docker logs`. Not PID 1, so container stop semantics are unaffected.
+#
+#   GARAGE_WEBUI=0        disable the UI entirely
+#   GARAGE_WEBUI_PORT=…   listen port (default 3909)
+#   AUTH_USER_PASS=…      'user:$2y$10$<bcrypt>' to require a login. Do this
+#                         if the port could ever be reachable beyond a
+#                         trusted LAN: unauthenticated GET /api/config echoes
+#                         the master admin/metrics/rpc secrets from the toml.
+if [ "${GARAGE_WEBUI:-1}" = "1" ]; then
+    PORT="${GARAGE_WEBUI_PORT:-3909}" /usr/local/bin/garage-webui &
+fi
+
 # --- Auto-bootstrap single-node layout on first boot ----------------------
 # Garage v2 requires an explicit cluster layout before any bucket ops.
 # Detect first-run by the presence of a marker file in metadata dir;
