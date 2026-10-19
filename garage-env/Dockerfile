@@ -6,21 +6,20 @@
 # Upstream dxflrs/garage is FROM scratch — no shell. We extract the garage
 # binary and repackage on top of alpine (for /bin/sh + envsubst).
 
-# NOTE: upstream release tags carry no 'v' prefix.
+# NOTE: take the webui binary from the upstream Docker image, NOT the GitHub
+# release assets — the release builds are glibc-dynamic and fail to exec on
+# alpine ("Error relocating …"). The image ships a static build, multi-arch.
 ARG WEBUI_VERSION=1.1.0
 
 FROM dxflrs/garage:v2.4.1 AS upstream
+FROM khairul169/garage-webui:${WEBUI_VERSION} AS webui
 
 FROM alpine:3.24
-ARG TARGETARCH
-ARG WEBUI_VERSION
 RUN apk add --no-cache gettext ca-certificates tzdata \
- && rm -rf /var/cache/apk/* \
- && wget -qO /usr/local/bin/garage-webui \
-      "https://github.com/khairul169/garage-webui/releases/download/${WEBUI_VERSION}/garage-webui-v${WEBUI_VERSION}-linux-${TARGETARCH}" \
- && chmod +x /usr/local/bin/garage-webui
+ && rm -rf /var/cache/apk/*
 
 COPY --from=upstream /garage /garage
+COPY --from=webui /bin/main /usr/local/bin/garage-webui
 COPY entrypoint.sh /entrypoint.sh
 COPY garage.toml.tmpl /garage.toml.tmpl
 RUN chmod +x /entrypoint.sh
