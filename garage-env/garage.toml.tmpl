@@ -17,3 +17,8 @@ root_domain   = "${GARAGE_S3_ROOT_DOMAIN}"
 api_bind_addr = "${GARAGE_ADMIN_BIND_ADDR}"
 admin_token   = "${GARAGE_ADMIN_TOKEN}"
 metrics_token = "${GARAGE_METRICS_TOKEN}"
+
+# Static-website hosting endpoint (garage web enable <bucket>, then fetch with
+# Host: <bucket> or a hostname added via `garage web hostname add`).
+[web-endpoint]
+api_bind_addr = "${GARAGE_WEB_ENDPOINT_BIND_ADDR}"
