@@ -25,7 +25,6 @@ All optional; defaults in parentheses. Point them at whatever suits your deploym
 | `GARAGE_S3_REGION` | `garage` | Must match your S3 client's region |
 | `GARAGE_S3_ROOT_DOMAIN` | `.s3.garage.local` | |
 | `GARAGE_ADMIN_BIND_ADDR` | `[::]:3903` | |
-| `GARAGE_WEB_ENDPOINT_BIND_ADDR` | `[::]:3902` | Static-website hosting endpoint |
 | `GARAGE_ADMIN_TOKEN` | auto-generated | |
 | `GARAGE_METRICS_TOKEN` | auto-generated | |
 | `GARAGE_WEBUI` | `1` | Set to `0` to disable the embedded web UI |
