@@ -6,7 +6,6 @@ on:
     tags: ['v*']
     paths:
       - 'garage-env/**'
-      - 'mcp-searxng/**'
       - '.github/workflows/build.yml'
   workflow_dispatch:
     inputs:
@@ -18,7 +17,6 @@ on:
         options:
           - all
           - garage-env
-          - mcp-searxng
 
 permissions:
   contents: read
@@ -32,7 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       garage-env: ${{ steps.filter.outputs.garage-env }}
-      mcp-searxng: ${{ steps.filter.outputs.mcp-searxng }}
     steps:
       - uses: actions/checkout@v7
       - id: filter
@@ -41,8 +38,6 @@ jobs:
           filters: |
             garage-env:
               - 'garage-env/**'
-            mcp-searxng:
-              - 'mcp-searxng/**'
 
   build-push:
     needs: changes
@@ -52,8 +47,6 @@ jobs:
       matrix:
         image:
           - name: garage-env
-            platforms: linux/amd64,linux/arm64
-          - name: mcp-searxng
             platforms: linux/amd64,linux/arm64
     steps:
       - name: Decide whether this matrix entry runs
@@ -74,7 +67,6 @@ jobs:
           else
             case "${{ matrix.image.name }}" in
               garage-env)   flag="${{ needs.changes.outputs.garage-env }}" ;;
-              mcp-searxng)  flag="${{ needs.changes.outputs.mcp-searxng }}" ;;
             esac
             if [ "$flag" = "true" ]; then
               echo "run=true" >> $GITHUB_OUTPUT
