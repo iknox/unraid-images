@@ -31,7 +31,9 @@ ARG PRISM_BUILD=ubuntu-vulkan-x64
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd -f render \
+ && usermod -aG video,render ubuntu 2>/dev/null || true
 
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
