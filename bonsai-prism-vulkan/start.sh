@@ -54,7 +54,11 @@ if [ -n "$SPEC_TYPE" ]; then
   SPEC_ARGS+=(--spec-type "$SPEC_TYPE" --spec-draft-n-min "$SPEC_DRAFT_N_MIN" --spec-draft-n-max "$SPEC_DRAFT_N_MAX" --spec-draft-p-min "$SPEC_DRAFT_P_MIN")
 fi
 
-# --reasoning-budget is not present in all llama-server builds; pass via EXTRA_ARGS if supported.
+REASONING_ARGS=()
+if [ -n "${REASONING_BUDGET:-}" ]; then
+  REASONING_ARGS+=(--reasoning-budget "$REASONING_BUDGET")
+fi
+
 exec /app/llama-server \
   --host "$HOST" \
   --port "$PORT" \
@@ -74,4 +78,5 @@ exec /app/llama-server \
   --presence-penalty 1.5 \
   --repeat-penalty 1.0 \
   "${SPEC_ARGS[@]}" \
+  "${REASONING_ARGS[@]}" \
   $EXTRA_ARGS
