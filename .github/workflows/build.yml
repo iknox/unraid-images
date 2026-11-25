@@ -6,6 +6,7 @@ on:
     tags: ['v*']
     paths:
       - 'garage-env/**'
+      - 'bonsai-prism-vulkan/**'
       - '.github/workflows/build.yml'
   workflow_dispatch:
     inputs:
@@ -17,6 +18,7 @@ on:
         options:
           - all
           - garage-env
+          - bonsai-prism-vulkan
 
 permissions:
   contents: read
@@ -30,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       garage-env: ${{ steps.filter.outputs.garage-env }}
+      bonsai-prism-vulkan: ${{ steps.filter.outputs.bonsai-prism-vulkan }}
     steps:
       - uses: actions/checkout@v7
       - id: filter
@@ -38,6 +41,8 @@ jobs:
           filters: |
             garage-env:
               - 'garage-env/**'
+            bonsai-prism-vulkan:
+              - 'bonsai-prism-vulkan/**'
 
   build-push:
     needs: changes
@@ -48,6 +53,10 @@ jobs:
         image:
           - name: garage-env
             platforms: linux/amd64,linux/arm64
+            build-args: ""
+          - name: bonsai-prism-vulkan
+            platforms: linux/amd64
+            build-args: ""
     steps:
       - name: Decide whether this matrix entry runs
         id: gate
@@ -66,7 +75,8 @@ jobs:
           # branch push: only build images whose subdir changed
           else
             case "${{ matrix.image.name }}" in
-              garage-env)   flag="${{ needs.changes.outputs.garage-env }}" ;;
+              garage-env)           flag="${{ needs.changes.outputs.garage-env }}" ;;
+              bonsai-prism-vulkan)  flag="${{ needs.changes.outputs.bonsai-prism-vulkan }}" ;;
             esac
             if [ "$flag" = "true" ]; then
               echo "run=true" >> $GITHUB_OUTPUT
@@ -110,6 +120,7 @@ jobs:
           context: ${{ matrix.image.name }}
           platforms: ${{ matrix.image.platforms }}
           push: true
+          build-args: ${{ matrix.image.build-args }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image.name }}

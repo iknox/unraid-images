@@ -5,6 +5,7 @@ Wrapper Docker images that back the templates in [unraid-templates](https://gith
 | Subdirectory          | Image                                       | Purpose                                          |
 |-----------------------|---------------------------------------------|--------------------------------------------------|
 | `garage-env/`         | `ghcr.io/iknox/garage-env`                  | Env-var-configured wrapper around Garage v2.4.1  |
+| `bonsai-prism-vulkan/`| `ghcr.io/iknox/bonsai-prism-vulkan`         | PrismML llama.cpp Vulkan server for Bonsai 2.5 27B (Strix Halo) |
 
 Each subdirectory has its own Dockerfile and README; CI builds and pushes each image to GHCR on changes to its respective subdir.
 
