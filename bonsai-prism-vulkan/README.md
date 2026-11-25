@@ -25,6 +25,7 @@ Key defaults:
 | `CACHE_TYPE_K/V` | `q4_0` | KV footprint |
 | `SPEC_TYPE` | `draft-mtp` | embedded MTP head |
 | `SPEC_DRAFT_N_MAX` | `3` | Bonsai preset |
+| `REASONING_BUDGET` | `0` | 0=fast/no thinking, -1=unrestricted, N>0=token budget |
 | `AUTO_DOWNLOAD` | `1` | download model if missing |
 
 ## Build
